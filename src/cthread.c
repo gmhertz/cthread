@@ -14,7 +14,7 @@
 /*System control variables*/
 int systemStatus = NOT_INITIALIZED;
 int counterTid = 0;
-TCB_t runningThread = NULL;
+TCB_t *runningThread = NULL;
 ucontext_t *end_Context = NULL;
 
 /*System Queues*/
@@ -32,7 +32,7 @@ void finishedThread();
 
 
 int cidentify(char *names, int size){
-    char groupIdentification[] = "Gunter Hertz - 220491\nCristiano Lunardi - 240508"
+    char groupIdentification[] = "Gunter Hertz - 220491\nCristiano Lunardi - 240508";
     if(initializeSystem() == 1){
         memcpy(names, groupIdentification, size);
         return 0;
@@ -55,7 +55,7 @@ int initializeSystem(){
 	        }
 	    }
 
-   	    if(blockedSuspendedQueueQueue == NULL){
+   	    if(blockedSuspendedQueue == NULL){
 	        blockedSuspendedQueue = (PFILA2)malloc(sizeof(FILA2));
 	        if(blockedSuspendedQueue == NULL){
 	            return -1;
@@ -99,7 +99,7 @@ int initializeSystem(){
             end_Context->uc_link = NULL;
             end_Context->uc_stack.ss_sp = (char *)malloc(SIGSTKSZ);
             end_Context->uc_stack.ss_size = SIGSTKSZ;
-            makecontext(end_Context, (void (*)(void) finishedThread), 0);
+            makecontext(end_Context, (void (*)(void)) finishedThread, 0);
         }
 
         systemStatus = INITIALIZED;
@@ -110,14 +110,14 @@ int initializeSystem(){
 
 void finishedThread(){
     if(initializeSystem() == 1){
-        if(runningThread->coontext.uc_link != end_Context){
+        if(runningThread->context.uc_link != end_Context){
             setcontext(runningThread->context.uc_link);
         }
         //release resources
         runningThread->state = PROCST_TERMINO;
         free(runningThread->context.uc_stack.ss_sp);
         free(runningThread);
-        runningThread == NULL;
+        runningThread = NULL;
         //CALL SCHEDULER
     }
 }
