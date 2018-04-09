@@ -26,8 +26,46 @@ PFILA2 readySuspendedQueue = NULL;
 
 
 /*HEADERS*/
+int ccreate();
 int initializeSystem();
 void finishedThread();
+int cidentify();
+
+
+
+int ccreate(){
+    if(initializeSystem() != 1){
+        return -1;
+    }
+
+    TCB_t *newThread = (TCB_t *)malloc(sizeof(TCB_t));
+    if(newThread == NULL){
+        return -1;
+    }
+
+    if(getcontext(&(newThread->context)) == -1){
+        return -1;
+    }
+
+    newThread->context.uc_link = end_Context;
+    newThread->context.uc_stack.ss_sp = (char *)malloc(SIGSTKSZ);
+    newThread->context.uc_stack.ss_size = SIGSTKSZ;
+    makecontext(&(newThread->context), (void (*)(void)) start, 1, arg);
+
+    newThread->tid = counterTid;
+    counterTid++;
+    newThread->state = PROCST_CRIACAO;
+
+
+    if(AppendFila2(readyQueue,newThread) == 0){
+        newThread->state = PROCST_APTO
+    }else{
+        return -1;
+    }
+
+    return newThread->tid;
+}
+
 
 
 
