@@ -31,6 +31,16 @@ void finishedThread();
 
 
 
+int cidentify(char *names, int size){
+    char groupIdentification[] = "Gunter Hertz - 220491\nCristiano Lunardi - 240508"
+    if(initializeSystem() == 1){
+        memcpy(names, groupIdentification, size);
+        return 0;
+    }else{
+        return -1;
+    }
+}
+
 
 int initializeSystem(){
 	if (systemStatus == NOT_INITIALIZED){
