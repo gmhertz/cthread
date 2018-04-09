@@ -32,8 +32,23 @@ void finishedThread();
 int cidentify();
 
 
+//
+//
+//void schedulerDispatcherManager(){
+//
+//    TCB_t *currentThread = runningThread;
+//    TCB_t *nextThread = NULL;
+//
+//    if(initializeSystem() == 1){
+//        //get next thread
+//    }
+//
+//
+//}
+//
 
-int ccreate(){
+
+int ccreate(void* (*start)(void*), void *arg, int prio){
     if(initializeSystem() != 1){
         return -1;
     }
@@ -55,10 +70,10 @@ int ccreate(){
     newThread->tid = counterTid;
     counterTid++;
     newThread->state = PROCST_CRIACAO;
-
+    newThread->prio = prio;
 
     if(AppendFila2(readyQueue,newThread) == 0){
-        newThread->state = PROCST_APTO
+        newThread->state = PROCST_APTO;
     }else{
         return -1;
     }
