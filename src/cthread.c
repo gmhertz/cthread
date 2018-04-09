@@ -26,26 +26,59 @@ PFILA2 readySuspendedQueue = NULL;
 
 
 /*HEADERS*/
-int ccreate();
+TCB_t *getNextThread();
+int ccreate(void* (*start)(void*), void *arg, int prio);
 int initializeSystem();
 void finishedThread();
 int cidentify();
 
 
-//
-//
-//void schedulerDispatcherManager(){
-//
-//    TCB_t *currentThread = runningThread;
-//    TCB_t *nextThread = NULL;
-//
-//    if(initializeSystem() == 1){
-//        //get next thread
-//    }
-//
-//
-//}
-//
+TCB_t *getNextThread(){
+    TCB_t *nextThread;
+    if(FirstFila2(readyQueue) != 0){
+        nextThread = GetAtIteratorFila2(readyQueue);
+        DeleteAtIteratorFila2(readyQueue);
+    }
+    return nextThread;
+}
+
+void schedulerDispatcherManager(){
+
+    TCB_t *previousThread = runningThread;
+    TCB_t *nextThread = NULL;
+
+    if(initializeSystem() == 1){
+        nextThread = getNextThread();
+    }
+
+    if(nextThread != NULL){
+        nextThread->state = PROCST_EXEC;
+        runningThread = nextThread;
+        runningThread->state = PROCST_EXEC;
+        if(previousThread != NULL){
+            swapcontext(&(previousThread->context), &(nextThread->context));
+        }else{
+            setcontext(&(nextThread->context));
+        }
+    }else{
+        printf("ERRO: ESCALONADOR SEM THREADS\n");
+        exit(1);
+    }
+}
+
+
+int cyield(void){
+    if(initializeSystem() == 1){
+        if(runningThread != NULL){
+            if(AppendFila2(readyQueue, runningThread) == 0){
+                runningThread->state = PROCST_APTO;
+            }
+        }
+        schedulerDispatcherManager();
+        return 0;
+    }
+    return -1;
+}
 
 
 int ccreate(void* (*start)(void*), void *arg, int prio){
@@ -171,6 +204,7 @@ void finishedThread(){
         free(runningThread->context.uc_stack.ss_sp);
         free(runningThread);
         runningThread = NULL;
-        //CALL SCHEDULER
+        //call next thread to execute
+        schedulerDispatcherManager();
     }
 }
