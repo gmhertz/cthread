@@ -93,13 +93,54 @@ int csuspend(int tid){
         wantedThread = GetAtIteratorFila2(blockedQueue);
         if(wantedThread->tid == tid){
             DeleteAtIteratorFila2(blockedQueue);
-            wantedThread->state = PROCST_APTO_SUS;
+            wantedThread->state = PROCST_BLOQ_SUS;
             if(AppendFila2(blockedSuspendedQueue, wantedThread) != 0){
             return -1;
             }
         }
     }
     return 0;
+}
+
+
+int cresume(int tid){
+    TCB_t *wantedThread;
+    //verifica se esta no apto ou no bloqueado
+    if(FirstFila2(readySuspendedQueue) != 0){
+        return -1;
+    }
+    while(NextFila2(readySuspendedQueue) != NXTFILA_ENDQUEUE){
+        wantedThread = GetAtIteratorFila2(readySuspendedQueue);
+        if(wantedThread->tid == tid){
+            DeleteAtIteratorFila2(readySuspendedQueue);
+            wantedThread->state = PROCST_APTO;
+            if(AppendFila2(readyQueue, wantedThread) != 0){
+            return -1;
+            }
+        }
+    }
+
+    if(FirstFila2(blockedSuspendedQueue) != 0){
+        return -1;
+    }
+    while(NextFila2(blockedSuspendedQueue) != NXTFILA_ENDQUEUE){
+        wantedThread = GetAtIteratorFila2(blockedSuspendedQueue);
+        if(wantedThread->tid == tid){
+            DeleteAtIteratorFila2(blockedSuspendedQueue);
+            wantedThread->state = PROCST_BLOQ;
+            if(AppendFila2(blockedQueue, wantedThread) != 0){
+            return -1;
+            }
+        }
+    }
+    return 0;
+}
+
+
+
+
+
+
 }
 
 
