@@ -67,6 +67,42 @@ void schedulerDispatcherManager(){
 }
 
 
+/*retorna 0 quando funciona corretamente
+  retorna negativo caso de errado*/
+int csuspend(int tid){
+    TCB_t *wantedThread;
+    //verifica se esta no apto ou no bloqueado
+    if(FirstFila2(readyQueue) != 0){
+        return -1;
+    }
+    while(NextFila2(readyQueue) != NXTFILA_ENDQUEUE){
+        wantedThread = GetAtIteratorFila2(readyQueue);
+        if(wantedThread->tid == tid){
+            DeleteAtIteratorFila2(readyQueue);
+            wantedThread->state = PROCST_APTO_SUS;
+            if(AppendFila2(readySuspendedQueue, wantedThread) != 0){
+            return -1;
+            }
+        }
+    }
+
+    if(FirstFila2(blockedQueue) != 0){
+        return -1;
+    }
+    while(NextFila2(blockedQueue) != NXTFILA_ENDQUEUE){
+        wantedThread = GetAtIteratorFila2(blockedQueue);
+        if(wantedThread->tid == tid){
+            DeleteAtIteratorFila2(blockedQueue);
+            wantedThread->state = PROCST_APTO_SUS;
+            if(AppendFila2(blockedSuspendedQueue, wantedThread) != 0){
+            return -1;
+            }
+        }
+    }
+    return 0;
+}
+
+
 int cyield(void){
     if(initializeSystem() == 1){
         if(runningThread != NULL){
