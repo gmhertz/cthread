@@ -28,44 +28,68 @@ PFILA2 readySuspendedQueue = NULL;
 /*HEADERS*/
 TCB_t *getNextThread();
 int ccreate(void* (*start)(void*), void *arg, int prio);
-int initializeSystem();
-void finishedThread();
+
 int cidentify();
+void schedulerDispatcherManager();
+void finishedThread();
+int initializeSystem();
 
 
-TCB_t *getNextThread(){
-    TCB_t *nextThread;
-    if(FirstFila2(readyQueue) != 0){
-        nextThread = GetAtIteratorFila2(readyQueue);
-        DeleteAtIteratorFila2(readyQueue);
-    }
-    return nextThread;
-}
 
-void schedulerDispatcherManager(){
+/*FUNCTIONS*/
 
-    TCB_t *previousThread = runningThread;
-    TCB_t *nextThread = NULL;
-
-    if(initializeSystem() == 1){
-        nextThread = getNextThread();
+int ccreate(void* (*start)(void*), void *arg, int prio){
+    if(initializeSystem() != 1){
+        return -1;
     }
 
-    if(nextThread != NULL){
-        nextThread->state = PROCST_EXEC;
-        runningThread = nextThread;
-        runningThread->state = PROCST_EXEC;
-        if(previousThread != NULL){
-            swapcontext(&(previousThread->context), &(nextThread->context));
-        }else{
-            setcontext(&(nextThread->context));
-        }
+    TCB_t *newThread = (TCB_t *)malloc(sizeof(TCB_t));
+    if(newThread == NULL){
+        return -1;
+    }
+
+    if(getcontext(&(newThread->context)) == -1){
+        return -1;
+    }
+
+    newThread->context.uc_link = end_Context;
+    newThread->context.uc_stack.ss_sp = (char *)malloc(SIGSTKSZ);
+    newThread->context.uc_stack.ss_size = SIGSTKSZ;
+    makecontext(&(newThread->context), (void (*)(void)) start, 1, arg);
+
+    newThread->tid = counterTid;
+    counterTid++;
+    newThread->state = PROCST_CRIACAO;
+    newThread->prio = prio;
+
+    if(AppendFila2(readyQueue,newThread) == 0){
+        newThread->state = PROCST_APTO;
     }else{
-        printf("ERRO: ESCALONADOR SEM THREADS\n");
-        exit(1);
+        return -1;
     }
+
+    return newThread->tid;
 }
 
+/**/
+
+int cyield(void){
+    if(initializeSystem() == 1){
+        if(runningThread != NULL){
+            if(AppendFila2(readyQueue, runningThread) == 0){
+                runningThread->state = PROCST_APTO;
+                schedulerDispatcherManager();
+                return 0;
+            }
+        }
+    }
+    return -1;
+}
+
+
+int cjoin(int tid){
+    return 0;
+}
 
 /*retorna 0 quando funciona corretamente
   retorna negativo caso de errado*/
@@ -81,7 +105,7 @@ int csuspend(int tid){
             DeleteAtIteratorFila2(readyQueue);
             wantedThread->state = PROCST_APTO_SUS;
             if(AppendFila2(readySuspendedQueue, wantedThread) != 0){
-            return -1;
+                return -1;
             }
         }
     }
@@ -95,12 +119,13 @@ int csuspend(int tid){
             DeleteAtIteratorFila2(blockedQueue);
             wantedThread->state = PROCST_BLOQ_SUS;
             if(AppendFila2(blockedSuspendedQueue, wantedThread) != 0){
-            return -1;
+                return -1;
             }
         }
     }
     return 0;
 }
+
 
 
 int cresume(int tid){
@@ -136,62 +161,23 @@ int cresume(int tid){
     return 0;
 }
 
+int csem_init(csem_t *sem, int count){
 
 
-
-
-
+    return 0;
 }
 
 
-int cyield(void){
-    if(initializeSystem() == 1){
-        if(runningThread != NULL){
-            if(AppendFila2(readyQueue, runningThread) == 0){
-                runningThread->state = PROCST_APTO;
-            }
-        }
-        schedulerDispatcherManager();
-        return 0;
-    }
-    return -1;
+int cwait(csem_t *sem){
+
+    return 0;
 }
 
 
-int ccreate(void* (*start)(void*), void *arg, int prio){
-    if(initializeSystem() != 1){
-        return -1;
-    }
+int csignal(csem_t *sem){
 
-    TCB_t *newThread = (TCB_t *)malloc(sizeof(TCB_t));
-    if(newThread == NULL){
-        return -1;
-    }
-
-    if(getcontext(&(newThread->context)) == -1){
-        return -1;
-    }
-
-    newThread->context.uc_link = end_Context;
-    newThread->context.uc_stack.ss_sp = (char *)malloc(SIGSTKSZ);
-    newThread->context.uc_stack.ss_size = SIGSTKSZ;
-    makecontext(&(newThread->context), (void (*)(void)) start, 1, arg);
-
-    newThread->tid = counterTid;
-    counterTid++;
-    newThread->state = PROCST_CRIACAO;
-    newThread->prio = prio;
-
-    if(AppendFila2(readyQueue,newThread) == 0){
-        newThread->state = PROCST_APTO;
-    }else{
-        return -1;
-    }
-
-    return newThread->tid;
+    return 0;
 }
-
-
 
 
 int cidentify(char *names, int size){
@@ -201,6 +187,57 @@ int cidentify(char *names, int size){
         return 0;
     }else{
         return -1;
+    }
+}
+
+
+/*AUXILIAR FUNCTIONS*/
+TCB_t *getThread(int threadID, PFILA2 queue){
+    TCB_t *wantedThread;
+
+    if(FirstFila2(queue) != 0){
+        return NULL;
+    }
+    while(NextFila2(queue) != NXTFILA_ENDQUEUE){
+        wantedThread = GetAtIteratorFila2(queue);
+        if(wantedThread->tid == threadID){
+            return wantedThread;
+        }
+    }
+    return NULL;
+}
+
+
+TCB_t *getNextThread(){
+    TCB_t *nextThread;
+    if(FirstFila2(readyQueue) != 0){
+        nextThread = GetAtIteratorFila2(readyQueue);
+        DeleteAtIteratorFila2(readyQueue);
+    }
+    return nextThread;
+}
+
+void schedulerDispatcherManager(){
+
+    TCB_t *previousThread = runningThread;
+    TCB_t *nextThread = NULL;
+
+    if(initializeSystem() == 1){
+        nextThread = getNextThread();
+    }
+
+    if(nextThread != NULL){
+        nextThread->state = PROCST_EXEC;
+        runningThread = nextThread;
+        runningThread->state = PROCST_EXEC;
+        if(previousThread != NULL){
+            swapcontext(&(previousThread->context), &(nextThread->context));
+        }else{
+            setcontext(&(nextThread->context));
+        }
+    }else{
+        printf("ERRO: ESCALONADOR SEM THREADS\n");
+        exit(1);
     }
 }
 
