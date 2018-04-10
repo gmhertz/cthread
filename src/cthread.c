@@ -88,6 +88,17 @@ int cyield(void){
 
 
 int cjoin(int tid){
+    TCB_t *threadToBlock;
+
+    if(initializeSystem() == 1){
+        if(runningThread != NULL){
+
+
+
+
+
+        }
+    }
     return 0;
 }
 
@@ -95,7 +106,11 @@ int cjoin(int tid){
   retorna negativo caso de errado*/
 int csuspend(int tid){
     TCB_t *wantedThread;
+    if(runningThread->tid == tid){
+        return -1;
+    }
     //verifica se esta no apto ou no bloqueado
+    //testar a running thread
     wantedThread = getThread(tid, readyQueue);
     if(wantedThread != NULL){
         DeleteAtIteratorFila2(readyQueue);
