@@ -161,9 +161,18 @@ int cresume(int tid){
 }
 
 int csem_init(csem_t *sem, int count){
-
-
-    return 0;
+    if(initializeSystem() == 1){
+        if(runningThread != NULL){
+            sem->fila = (PFILA2)malloc(sizeof(FILA2));
+            if(sem->fila != NULL){
+                if(CreateFila2(sem->fila) == 0){
+                    sem->count = count;
+                    return 0;
+                }
+            }
+        }
+    }
+    return -1;
 }
 
 
