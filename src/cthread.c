@@ -33,7 +33,7 @@ int cidentify();
 void schedulerDispatcherManager();
 void finishedThread();
 int initializeSystem();
-
+TCB_t *getThread(int threadID, PFILA2 queue);
 
 
 /*FUNCTIONS*/
@@ -96,51 +96,45 @@ int cjoin(int tid){
 int csuspend(int tid){
     TCB_t *wantedThread;
     //verifica se esta no apto ou no bloqueado
-    if(FirstFila2(readyQueue) != 0){
-        return -1;
-    }
-    while(NextFila2(readyQueue) != NXTFILA_ENDQUEUE){
-        wantedThread = GetAtIteratorFila2(readyQueue);
-        if(wantedThread->tid == tid){
-            DeleteAtIteratorFila2(readyQueue);
-            wantedThread->state = PROCST_APTO_SUS;
-            if(AppendFila2(readySuspendedQueue, wantedThread) != 0){
-                return -1;
-            }
+    wantedThread = getThread(tid, readyQueue);
+    if(wantedThread != NULL){
+        DeleteAtIteratorFila2(readyQueue);
+        wantedThread->state = PROCST_APTO_SUS;
+        if(AppendFila2(readySuspendedQueue, wantedThread) != 0){
+            return -1;
         }
+        return 0;
     }
 
-    if(FirstFila2(blockedQueue) != 0){
+    wantedThread = getThread(tid, blockedQueue);
+    if(wantedThread != NULL){
+        DeleteAtIteratorFila2(blockedQueue);
+        wantedThread->state = PROCST_BLOQ_SUS;
+        if(AppendFila2(blockedSuspendedQueue,wantedThread) != 0){
+            return -1;
+        }
         return -1;
     }
-    while(NextFila2(blockedQueue) != NXTFILA_ENDQUEUE){
-        wantedThread = GetAtIteratorFila2(blockedQueue);
-        if(wantedThread->tid == tid){
-            DeleteAtIteratorFila2(blockedQueue);
-            wantedThread->state = PROCST_BLOQ_SUS;
-            if(AppendFila2(blockedSuspendedQueue, wantedThread) != 0){
-                return -1;
-            }
-        }
-    }
-    return 0;
+    return -1;
 }
 
 
 
 int cresume(int tid){
-    TCB_t *wantedThread;
+    TCB_t *wantedThread = NULL;
     //verifica se esta no apto ou no bloqueado
     if(FirstFila2(readySuspendedQueue) != 0){
         return -1;
     }
+
+
     while(NextFila2(readySuspendedQueue) != NXTFILA_ENDQUEUE){
         wantedThread = GetAtIteratorFila2(readySuspendedQueue);
         if(wantedThread->tid == tid){
             DeleteAtIteratorFila2(readySuspendedQueue);
             wantedThread->state = PROCST_APTO;
             if(AppendFila2(readyQueue, wantedThread) != 0){
-            return -1;
+                return -1;
             }
         }
     }
@@ -154,9 +148,14 @@ int cresume(int tid){
             DeleteAtIteratorFila2(blockedSuspendedQueue);
             wantedThread->state = PROCST_BLOQ;
             if(AppendFila2(blockedQueue, wantedThread) != 0){
-            return -1;
+                return -1;
             }
         }
+    }
+
+    //thread not found
+    if(wantedThread == NULL){
+        return -1;
     }
     return 0;
 }
@@ -192,6 +191,7 @@ int cidentify(char *names, int size){
 
 
 /*AUXILIAR FUNCTIONS*/
+//Return thread if is on queue else return NULL
 TCB_t *getThread(int threadID, PFILA2 queue){
     TCB_t *wantedThread;
 
