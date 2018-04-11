@@ -34,6 +34,8 @@ void schedulerDispatcherManager();
 void finishedThread();
 int initializeSystem();
 TCB_t *getThread(int threadID, PFILA2 queue);
+int containsThread(int threadID, PFILA2 queue);
+void unblockThread(int tid);
 
 
 /*FUNCTIONS*/
@@ -88,18 +90,49 @@ int cyield(void){
 
 
 int cjoin(int tid){
-    TCB_t *threadToBlock;
+    TCB_t *wantedThread;
+    ucontext_t *unblockContext;
 
     if(initializeSystem() == 1){
         if(runningThread != NULL){
+            if(containsThread(tid, readyQueue) == 0 || containsThread(tid, readySuspendedQueue) || containsThread(tid, blockedQueue) == 0 || containsThread(tid, blockedSuspendedQueue) == 0){
+                //tratar filas
+                wantedThread = getThread(tid, readyQueue);
+                if(wantedThread == NULL){
+                    wantedThread = getThread(tid, readySuspendedQueue);
+                    if(wantedThread == NULL){
+                        wantedThread = getThread(tid, blockedQueue);
+                        if(wantedThread == NULL){
+                            wantedThread == getThread(tid,blockedSuspendedQueue);
+                        }
+                    }
+                }
 
+                if(wantedThread->context.uc_link == end_Context){
+                    unblockContext = (ucontext_t *)malloc(sizeof(ucontext_t));
+                    if(unblockContext == NULL){
+                        return -1;
+                    }
+                    if(getcontext(unblockContext) == -1){
+                        return -1;
+                    }
 
+                    unblockContext->uc_link = NULL;
+                    unblockContext->uc_stack.ss_sp = (char *)malloc(SIGSTKSZ);
+                    unblockContext->uc_stack.ss_size = SIGSTKSZ;
+                    makecontext(unblockContext, (void (*)(void))unblockThread,1, runningThread->tid);
 
-
-
+                    if(AppendFila2(blockedQueue, runningThread) == 0){
+                        wantedThread->context.uc_link = unblockContext;
+                        runningThread->state = PROCST_BLOQ;
+                        schedulerDispatcherManager();
+                        return 0;
+                    }
+                }
+            }
         }
     }
-    return 0;
+    return -1;
 }
 
 /*retorna 0 quando funciona corretamente
@@ -203,6 +236,23 @@ int cidentify(char *names, int size){
 
 
 /*AUXILIAR FUNCTIONS*/
+int containsThread(int threadID, PFILA2 queue){
+    TCB_t *wantedThread;
+
+    if(FirstFila2(queue) != 0){
+        return -1;
+    }
+    while(NextFila2(queue) != NXTFILA_ENDQUEUE){
+        wantedThread = GetAtIteratorFila2(queue);
+        if(wantedThread->tid == threadID){
+            return 0;
+        }
+    }
+    return -1;
+}
+
+
+
 //Return thread if is on queue else return NULL
 TCB_t *getThread(int threadID, PFILA2 queue){
     TCB_t *wantedThread;
@@ -333,4 +383,24 @@ void finishedThread(){
         //call next thread to execute
         schedulerDispatcherManager();
     }
+}
+
+void unblockThread(int tid){
+    TCB_t *wantedThread;
+
+    wantedThread = getThread(tid, blockedQueue);
+    if(wantedThread != NULL){
+        if(AppendFila2(readyQueue, wantedThread) == 0){
+            DeleteAtIteratorFila2(blockedQueue);
+            wantedThread->state =PROCST_APTO;
+        }
+    }
+
+    wantedThread = getThread(tid, blockedSuspendedQueue);
+        if(wantedThread != NULL){
+            if(AppendFila2(readySuspendedQueue, wantedThread) == 0){
+                DeleteAtIteratorFila2(blockedSuspendedQueue);
+                wantedThread->state = PROCST_APTO_SUS;
+            }
+        }
 }
