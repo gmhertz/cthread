@@ -95,39 +95,36 @@ int cjoin(int tid){
 
     if(initializeSystem() == 1){
         if(runningThread != NULL){
-            if(containsThread(tid, readyQueue) == 0 || containsThread(tid, readySuspendedQueue) || containsThread(tid, blockedQueue) == 0 || containsThread(tid, blockedSuspendedQueue) == 0){
-                //tratar filas
-                wantedThread = getThread(tid, readyQueue);
-                if(wantedThread == NULL){
-                    wantedThread = getThread(tid, readySuspendedQueue);
-                    if(wantedThread == NULL){
-                        wantedThread = getThread(tid, blockedQueue);
-                        if(wantedThread == NULL){
-                            wantedThread == getThread(tid,blockedSuspendedQueue);
-                        }
-                    }
+            //try ready queue
+            wantedThread = getThread(tid, readyQueue);
+            if(wantedThread == NULL)
+                wantedThread = getThread(tid,readySuspendedQueue);
+                if(wantedThread == NULL)
+                    wantedThread = getThread(tid, blockedQueue);
+                    if(wantedThread == NULL)
+                        wantedThread = getThread(tid, blockedSuspendedQueue);
+                        if(wantedThread == NULL)
+                            return -1;
+
+            if(wantedThread->context.uc_link == end_Context){
+                unblockContext = (ucontext_t *)malloc(sizeof(ucontext_t));
+                if(unblockContext == NULL){
+                    return -1;
+                }
+                if(getcontext(unblockContext) == -1){
+                    return -1;
                 }
 
-                if(wantedThread->context.uc_link == end_Context){
-                    unblockContext = (ucontext_t *)malloc(sizeof(ucontext_t));
-                    if(unblockContext == NULL){
-                        return -1;
-                    }
-                    if(getcontext(unblockContext) == -1){
-                        return -1;
-                    }
+                unblockContext->uc_link = NULL;
+                unblockContext->uc_stack.ss_sp = (char *)malloc(SIGSTKSZ);
+                unblockContext->uc_stack.ss_size = SIGSTKSZ;
+                makecontext(unblockContext, (void (*)(void))unblockThread,1, runningThread->tid);
 
-                    unblockContext->uc_link = NULL;
-                    unblockContext->uc_stack.ss_sp = (char *)malloc(SIGSTKSZ);
-                    unblockContext->uc_stack.ss_size = SIGSTKSZ;
-                    makecontext(unblockContext, (void (*)(void))unblockThread,1, runningThread->tid);
-
-                    if(AppendFila2(blockedQueue, runningThread) == 0){
-                        wantedThread->context.uc_link = unblockContext;
-                        runningThread->state = PROCST_BLOQ;
-                        schedulerDispatcherManager();
-                        return 0;
-                    }
+                if(AppendFila2(blockedQueue, runningThread) == 0){
+                    wantedThread->context.uc_link = unblockContext;
+                    runningThread->state = PROCST_BLOQ;
+                    schedulerDispatcherManager();
+                    return 0;
                 }
             }
         }
