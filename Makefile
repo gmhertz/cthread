@@ -16,15 +16,15 @@ INC_DIR=./include
 BIN_DIR=./bin
 SRC_DIR=./src
 
-all: object lib
+all: cthread libcthread
 
-object: #dependências para a regra1
+cthread: 
 	$(CC) -c $(SRC_DIR)/cthread.c -I $(INC_DIR) -Wall
 	mv cthread.o $(BIN_DIR)
 
-lib: #dependências para a regra2
-	$(BIN_DIR)support.o $(BIN_DIR)cthread.o
-	ar crs $(LIB_DIR)libcthread.a $(BIN_DIR)support.o $(BIN_DIR)cthread.o
+libcthread: 
+	ar crs libcthread.a $(BIN_DIR)/support.o $(BIN_DIR)/cthread.o
+	mv libcthread.a $(LIB_DIR)
 
 clean:
 	rm -rf $(LIB_DIR)/*.a $(BIN_DIR)/*.o $(SRC_DIR)/*~ $(INC_DIR)/*~ *~

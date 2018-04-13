@@ -12,27 +12,30 @@
 #include "../include/cthread.h"
 #include <stdio.h>
 
-void* func0(void *arg) {
+void *func0(void *arg) {
 	printf("Eu sou a thread ID0 imprimindo %d\n", *((int *)arg));
 	return;
 }
 
-void* func1(void *arg) {
+void *func1(void *arg) {
 	printf("Eu sou a thread ID1 imprimindo %d\n", *((int *)arg));
 }
 
 int main(int argc, char *argv[]) {
 
-	int	id0, id1;
-	int i;
+	int id0, id1;
+	int i = 5;
 
-	id0 = ccreate(func0, (void *)&i, 0);
-	id1 = ccreate(func1, (void *)&i, 0);
+
+
+	id0 = ccreate(func0, i, 0);
+	id1 = ccreate(func1, i, 0);
 
 	printf("Eu sou a main após a criação de ID0 e ID1\n");
 
 	cjoin(id0);
 	cjoin(id1);
+	
 
 	printf("Eu sou a main voltando para terminar o programa\n");
 }

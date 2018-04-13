@@ -14,6 +14,8 @@
 /*System control variables*/
 int systemStatus = NOT_INITIALIZED;
 int counterTid = 0;
+
+
 TCB_t *runningThread = NULL;
 ucontext_t *end_Context = NULL;
 
@@ -26,16 +28,17 @@ PFILA2 readySuspendedQueue = NULL;
 
 
 /*HEADERS*/
-TCB_t *getNextThread();
 int ccreate(void* (*start)(void*), void *arg, int prio);
-
 int cidentify();
-void schedulerDispatcherManager();
 void finishedThread();
+
+//auxiliar functions
 int initializeSystem();
+TCB_t *getNextThread();
 TCB_t *getThread(int threadID, PFILA2 queue);
 int containsThread(int threadID, PFILA2 queue);
 void unblockThread(int tid);
+void schedulerDispatcherManager();
 
 
 /*FUNCTIONS*/
@@ -46,6 +49,7 @@ int ccreate(void* (*start)(void*), void *arg, int prio){
     }
 
     TCB_t *newThread = (TCB_t *)malloc(sizeof(TCB_t));
+
     if(newThread == NULL){
         return -1;
     }
@@ -55,7 +59,7 @@ int ccreate(void* (*start)(void*), void *arg, int prio){
     }
 
     newThread->context.uc_link = end_Context;
-    newThread->context.uc_stack.ss_sp = (char *)malloc(SIGSTKSZ);
+    newThread->context.uc_stack.ss_sp = (char *) malloc(SIGSTKSZ);
     newThread->context.uc_stack.ss_size = SIGSTKSZ;
     makecontext(&(newThread->context), (void (*)(void)) start, 1, arg);
 
@@ -211,12 +215,51 @@ int csem_init(csem_t *sem, int count){
 
 int cwait(csem_t *sem){
 
-    return 0;
+    if(initializeSystem() == 1){
+        if(runningThread != NULL){
+            if(sem->fila != NULL){
+                sem->count--;
+                if(sem->count < 0){
+                    if(AppendFila2(sem->fila, runningThread) == 0){
+                        if(AppendFila2(blockedQueue, runningThread) == 0){
+                            runningThread->state = PROCST_BLOQ;
+                            schedulerDispatcherManager();
+                            return 0;
+                        }
+                    }
+                }else{
+                    return 0;
+                }
+            }
+        }
+    }
+    return -1;
 }
 
 
 int csignal(csem_t *sem){
+    TCB_t *wantedThread;
 
+    if(initializeSystem() == 1){
+        if(runningThread != NULL){
+            if(sem->fila != NULL){
+                sem->count++;
+                if(FirstFila2(sem->fila) == 0){
+                    wantedThread = GetAtIteratorFila2(sem->fila);
+                    wantedThread = getThread(wantedThread->tid, blockedQueue);
+                    if(wantedThread != NULL){
+                        if(AppendFila2(readyQueue, wantedThread) == 0){
+                            DeleteAtIteratorFila2(sem->fila);
+                            DeleteAtIteratorFila2(blockedQueue);
+                            return 0;
+                        }
+                    }
+
+                }
+            }
+
+        }
+    }
     return 0;
 }
 
@@ -269,7 +312,7 @@ TCB_t *getThread(int threadID, PFILA2 queue){
 
 TCB_t *getNextThread(){
     TCB_t *nextThread;
-    if(FirstFila2(readyQueue) != 0){
+    if(FirstFila2(readyQueue) == 0){
         nextThread = GetAtIteratorFila2(readyQueue);
         DeleteAtIteratorFila2(readyQueue);
     }
@@ -279,7 +322,7 @@ TCB_t *getNextThread(){
 void schedulerDispatcherManager(){
 
     TCB_t *previousThread = runningThread;
-    TCB_t *nextThread = NULL;
+    TCB_t *nextThread;
 
     if(initializeSystem() == 1){
         nextThread = getNextThread();
@@ -288,7 +331,6 @@ void schedulerDispatcherManager(){
     if(nextThread != NULL){
         nextThread->state = PROCST_EXEC;
         runningThread = nextThread;
-        runningThread->state = PROCST_EXEC;
         if(previousThread != NULL){
             swapcontext(&(previousThread->context), &(nextThread->context));
         }else{
@@ -310,7 +352,7 @@ int initializeSystem(){
 	            return -1;
 	        }
 	        if(CreateFila2(blockedQueue) != 0){
-	        return -1;
+	           return -1;
 	        }
 	    }
 
@@ -320,7 +362,7 @@ int initializeSystem(){
 	            return -1;
 	        }
 	        if(CreateFila2(blockedSuspendedQueue) != 0){
-	        return -1;
+	           return -1;
 	        }
 	    }
 
@@ -330,7 +372,7 @@ int initializeSystem(){
 	            return -1;
 	        }
 	        if(CreateFila2(readyQueue) != 0){
-	        return -1;
+	           return -1;
 	        }
 	    }
 
@@ -340,10 +382,26 @@ int initializeSystem(){
 	            return -1;
 	        }
 	        if(CreateFila2(readySuspendedQueue) != 0){
-	        return -1;
+	           return -1;
 	        }
 	    }
+        //configuring the main thread
+        if(counterTid == 0){
+            TCB_t *thread_Main = (TCB_t *)malloc(sizeof(TCB_t));
 
+            if(thread_Main == NULL){
+                return -1;
+            }
+            if (getcontext(&(thread_Main->context)) == -1)
+                return -1;
+            
+            thread_Main->tid = 0;
+            thread_Main->prio = 0;
+            counterTid++;
+            runningThread = thread_Main;
+            runningThread->state = PROCST_EXEC;
+
+        }
 
 	    //create a final context for threads
         if(end_Context == NULL){
