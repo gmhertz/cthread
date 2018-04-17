@@ -97,19 +97,29 @@ int cjoin(int tid){
     TCB_t *wantedThread;
     ucontext_t *unblockContext;
 
+    printf("Entra CJOIN\n");
     if(initializeSystem() == 1){
         if(runningThread != NULL){
             //try ready queue
+            printf("TENTA PEGAR A THREAD\n");
             wantedThread = getThread(tid, readyQueue);
+            printf("thread id %d\n", wantedThread->tid);
+
             if(wantedThread == NULL)
                 wantedThread = getThread(tid,readySuspendedQueue);
+                printf("thread id %d\n", wantedThread->tid);
+
                 if(wantedThread == NULL)
                     wantedThread = getThread(tid, blockedQueue);
+                    printf("thread id %d\n", wantedThread->tid);
+
                     if(wantedThread == NULL)
                         wantedThread = getThread(tid, blockedSuspendedQueue);
+                        printf("thread id %d\n", wantedThread->tid);
+
                         if(wantedThread == NULL)
                             return -1;
-
+            printf("thread id %d\n", wantedThread->tid);
             if(wantedThread->context.uc_link == end_Context){
                 unblockContext = (ucontext_t *)malloc(sizeof(ucontext_t));
                 if(unblockContext == NULL){
@@ -293,17 +303,21 @@ int containsThread(int threadID, PFILA2 queue){
 
 
 
+//ERRO AQUI?
 //Return thread if is on queue else return NULL
 TCB_t *getThread(int threadID, PFILA2 queue){
     TCB_t *wantedThread;
 
-    if(FirstFila2(queue) != 0){
-        return NULL;
-    }
-    while(NextFila2(queue) != NXTFILA_ENDQUEUE){
-        wantedThread = GetAtIteratorFila2(queue);
-        if(wantedThread->tid == threadID){
-            return wantedThread;
+    if(queue != NULL){
+        if(FirstFila2(queue) == 0){
+            do{
+                wantedThread = GetAtIteratorFila2(queue);
+                if(wantedThread != NULL){
+                    if(wantedThread->tid == threadID){
+                        return wantedThread;
+                    }
+                }
+            }while(NextFila2(queue) == 0);
         }
     }
     return NULL;
