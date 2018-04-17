@@ -36,7 +36,6 @@ void finishedThread();
 int initializeSystem();
 TCB_t *getNextThread();
 TCB_t *getThread(int threadID, PFILA2 queue);
-int containsThread(int threadID, PFILA2 queue);
 void unblockThread(int tid);
 void schedulerDispatcherManager();
 
@@ -284,26 +283,6 @@ int cidentify(char *names, int size){
     }
 }
 
-
-/*AUXILIAR FUNCTIONS*/
-int containsThread(int threadID, PFILA2 queue){
-    TCB_t *wantedThread;
-
-    if(FirstFila2(queue) != 0){
-        return -1;
-    }
-    while(NextFila2(queue) != NXTFILA_ENDQUEUE){
-        wantedThread = GetAtIteratorFila2(queue);
-        if(wantedThread->tid == threadID){
-            return 0;
-        }
-    }
-    return -1;
-}
-
-
-
-//ERRO AQUI?
 //Return thread if is on queue else return NULL
 TCB_t *getThread(int threadID, PFILA2 queue){
     TCB_t *wantedThread;
