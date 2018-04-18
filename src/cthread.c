@@ -426,7 +426,6 @@ void finishedThread(){
 void unblockThread(int tid){
     TCB_t *wantedThread;
 
-    printf("Desbloqueando thread\n");
     wantedThread = getThread(tid, blockedQueue);
     if(wantedThread != NULL){
         if(AppendFila2(readyQueue, wantedThread) == 0){
