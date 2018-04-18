@@ -25,6 +25,7 @@ void* fatorial(void *i) {
 void* fibonnaci (void *i) {
      int fi, fj, fk, k, n;
 
+     printf("Fibonnaci Serie:\n");
      n = *(int *)i;
 
      fi = 0;
@@ -50,8 +51,8 @@ int main(int argc, char **argv) {
 
     printf("Threads fatorial e Fibonnaci criadas...\n");
 
-	cjoin(id0);
 	cjoin(id1);
+	cjoin(id0);
 
 	printf("Main retornando para terminar o programa\n");
 }
