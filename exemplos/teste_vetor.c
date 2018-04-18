@@ -33,6 +33,7 @@ void *func(void *arg){
 int main(int argc, char *argv[]) {
     int i, pid[MAX_THR];
 
+    printf("test_vetor\n");
   
     for (i = 0; i < MAX_THR; i++) {
         pid[i] = ccreate(func, (void *)('A'+i), 0);

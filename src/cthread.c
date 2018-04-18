@@ -96,29 +96,19 @@ int cjoin(int tid){
     TCB_t *wantedThread;
     ucontext_t *unblockContext;
 
-    printf("Entra CJOIN\n");
     if(initializeSystem() == 1){
         if(runningThread != NULL){
             //try ready queue
-            printf("TENTA PEGAR A THREAD\n");
             wantedThread = getThread(tid, readyQueue);
-            printf("thread id %d\n", wantedThread->tid);
-
             if(wantedThread == NULL)
                 wantedThread = getThread(tid,readySuspendedQueue);
-                printf("thread id %d\n", wantedThread->tid);
-
                 if(wantedThread == NULL)
                     wantedThread = getThread(tid, blockedQueue);
-                    printf("thread id %d\n", wantedThread->tid);
-
                     if(wantedThread == NULL)
                         wantedThread = getThread(tid, blockedSuspendedQueue);
-                        printf("thread id %d\n", wantedThread->tid);
-
                         if(wantedThread == NULL)
                             return -1;
-            printf("thread id %d\n", wantedThread->tid);
+            //valida apenas ter uma thread no join
             if(wantedThread->context.uc_link == end_Context){
                 unblockContext = (ucontext_t *)malloc(sizeof(ucontext_t));
                 if(unblockContext == NULL){

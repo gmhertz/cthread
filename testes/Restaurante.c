@@ -21,7 +21,7 @@ void *cliente1(void *rest)
 	cwait(restaurante);
 	printf("Cliente1 senta na mesa.\n");
 	
-	int tid3 = ccreate(cliente3, NULL);
+	int tid3 = ccreate(cliente3, NULL, 3);
 	if (tid3 != -1)
 	{
 		printf("Cliente3 entra no restaurante.\n");
@@ -85,15 +85,15 @@ int main()
 {
 	csem_t restaurante;
 	
-	int tid1 = ccreate(cliente1, &restaurante);
+	int tid1 = ccreate(cliente1, &restaurante,3);
 	if (tid1 != -1)
 		printf("Cliente1 entra no restaurante.\n");
 	
-	int tid2 = ccreate(cliente2, &restaurante);
+	int tid2 = ccreate(cliente2, &restaurante,3);
 	if (tid2 != -1)
 		printf("Cliente2 entra no restaurante.\n");
 
-	int tid4 = ccreate(cliente4, &restaurante);
+	int tid4 = ccreate(cliente4, &restaurante,3);
 	if (tid4 != -1)
 		printf("Cliente4 entra no restaurante.\n");
 	
