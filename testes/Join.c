@@ -5,61 +5,62 @@
 
 void *function1()
 {
-	printf("\nFunction1\n\n");
-	printf("Libera para outra thread.\n");
+	printf("Function1 - Ganha o processador.\n");
+	printf("Function1 - Libera para outra thread.\n");
 	cyield();
-	printf("\nThread da function1 ganha processador.\n");
-	printf("Thread da function1 finalizada.\n");
+	printf("Function1 - Thread da function1 ganha processador.\n");
+	printf("Function1 - Thread da function1 finalizada.\n");
 
 	return NULL;
 }
 
 void *function2 ()
 {
-	printf("\nFunction2\n\n");
-	printf("Thread da function2 finalizada.\n");
+	printf("Function2 - Ganha o processador.\n");
+	printf("Function2 - Thread da function2 finalizada.\n");
 
 	return NULL;
 }
 
 void *function3 ()
 {
-	printf("\nFunction3\n\n");
-	printf("Libera para outra thread.\n");
+	printf("Function3 - Ganha o processador.\n");
+	printf("Function3  -Libera para outra thread.\n");
 	cyield();
 	
-	printf("\nThread da function3 ganha processador.\n");
+	printf("Function3 - Thread da function3 ganha processador.\n");
 	int tid2 = ccreate(function2, NULL, 5);
 	if (tid2 != -1)
 	{
 		printf("Thread da function2 criada.\n");
-		printf("Usando join na function2.\n");
+		printf("Function3 - function 3 se bloqueia usando join na function2.\n");
 		cjoin(tid2);
 	}
 	
-	printf("\nThread da function3 ganha processador.\n");
-	printf("Thread da function3 finalizada.\n");
+	printf("Function3 - Thread da function3 ganha processador.\n");
+	printf("Function3 - Thread da function3 finalizada.\n");
 
 	return NULL;
 }
 
 int main()
 {
-	printf("Thread main\n\n");
+	printf("Main - Thread main executando\n");
+
 	int td1 = ccreate(function1, NULL, 5);
-	if (td1 != -1)
+	if (td1 != 0)
 		printf("Thread da function1 criada.\n");
 	
 	int td3 = ccreate(function3, NULL, 5);
-	if (td3 != -3)
+	if (td3 != 0)
 	{
 		printf("Thread da function3 criada.\n");
-		printf("Usando join na function3.\n");
+		printf("Main se bloqueia ate o termino da function3.\n");
 		cjoin(td3);
 	}
 	
-	printf("\nThread main ganha processador.\n");
-	printf("Thread main finalizada.");
+	printf("Main - Thread main ganha processador.\n");
+	printf("Main -Thread main finalizada.\n");
 
 	return 0;
 }

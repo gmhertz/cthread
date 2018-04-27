@@ -1,16 +1,17 @@
-all:  temp restaurante semaforo
+all:  test join show semaforo
 
 join: ../lib/libcthread.a ./Join.c
 	gcc -o Join Join.c -L../lib -lcthread -Wall
 
+
+show: ../lib/libcthread.a ./Show.c
+	gcc -o Show Show.c -L../lib -lcthread -Wall
+
+test: ../lib/libcthread.a ./ThreadTest.c
+	gcc -o ThreadTest ThreadTest.c -L../lib -lcthread -Wall
+
 semaforo: ../lib/libcthread.a ./Semaforo.c
 	gcc -o Semaforo Semaforo.c -L../lib -lcthread -Wall
-	
-restaurante: ../lib/libcthread.a ./Restaurante.c
-	gcc -o Restaurante Restaurante.c -L../lib -lcthread -Wall
-
-temp: ../lib/libcthread.a ./Temp.c
-	gcc -o Temp Temp.c -L../lib -lcthread -Wall
 
 clean:
-	rm -rf ./Temp ./Restaurante ./Semaforo
+	rm -rf ./TheadTest ./Join ./Show ./Semaforo
