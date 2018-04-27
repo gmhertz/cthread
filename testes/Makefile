@@ -1,17 +1,23 @@
+CC=gcc
+LIB_DIR=../lib
+INC_DIR=../include
+BIN_DIR=../bin
+SRC_DIR=../src
+
 all:  test join show semaforo
 
-join: ../lib/libcthread.a ./Join.c
-	gcc -o Join Join.c -L../lib -lcthread -Wall
+join: $(LIB_DIR)/libcthread.a ./Join.c
+	$(CC) -o Join Join.c -L$(LIB_DIR) -lcthread -Wall
 
 
-show: ../lib/libcthread.a ./Show.c
-	gcc -o Show Show.c -L../lib -lcthread -Wall
+show: $(LIB_DIR)/libcthread.a ./Show.c
+	$(CC) -o Show Show.c -L$(LIB_DIR) -lcthread -Wall
 
-test: ../lib/libcthread.a ./ThreadTest.c
-	gcc -o ThreadTest ThreadTest.c -L../lib -lcthread -Wall
+test: $(LIB_DIR)/libcthread.a ./ThreadTest.c
+	$(CC) -o ThreadTest ThreadTest.c -L$(LIB_DIR) -lcthread -Wall
 
-semaforo: ../lib/libcthread.a ./Semaforo.c
-	gcc -o Semaforo Semaforo.c -L../lib -lcthread -Wall
+semaforo: $(LIB_DIR)/libcthread.a ./Semaforo.c
+	$(CC) -o Semaforo Semaforo.c -L$(LIB_DIR) -lcthread -Wall
 
 clean:
 	rm -rf ./TheadTest ./Join ./Show ./Semaforo
